@@ -1,12 +1,11 @@
 <?php
 
-function brutus_settings($saved_settings, $subtheme_defaults = array()) {
+/**
+ * @file
+ * Contains theme override functions and process & preprocess functions for ninesixtyfive
+ */
 
-  // Get the default values from the .info file.
-  $defaults = brutus_theme_get_default_settings('brutus');
-
-  // Merge the saved variables and their default values.
-  $settings = array_merge($defaults, $saved_settings);
+function brutus_form_system_theme_settings_alter(&$form, $form_state) {
 
   /*
    * Create the form using Forms API
@@ -15,7 +14,7 @@ function brutus_settings($saved_settings, $subtheme_defaults = array()) {
   $form['brutus_zen_tabs'] = array(
     '#type'          => 'checkbox',
     '#title'         => t('Use Zen Tabs'),
-    '#default_value' => $settings['brutus_zen_tabs'],
+    '#default_value' => theme_get_setting('brutus_zen_tabs'),
     '#description'   => t('Replace the default tabs by the Zen Tabs.'),
     '#prefix'        => '<strong>' . t('Zen Tabs:') . '</strong>',
   );
@@ -28,7 +27,7 @@ function brutus_settings($saved_settings, $subtheme_defaults = array()) {
   $form['brutus_breadcrumb']['brutus_breadcrumb'] = array(
     '#type'          => 'select',
     '#title'         => t('Display breadcrumb'),
-    '#default_value' => $settings['brutus_breadcrumb'],
+    '#default_value' => theme_get_setting('brutus_breadcrumb'),
     '#options'       => array(
                           'yes'   => t('Yes'),
                           'admin' => t('Only in admin section'),
@@ -39,7 +38,7 @@ function brutus_settings($saved_settings, $subtheme_defaults = array()) {
     '#type'          => 'textfield',
     '#title'         => t('Breadcrumb separator'),
     '#description'   => t('Text only. Don’t forget to include spaces.'),
-    '#default_value' => $settings['brutus_breadcrumb_separator'],
+    '#default_value' => theme_get_setting('brutus_breadcrumb_separator'),
     '#size'          => 5,
     '#maxlength'     => 10,
     '#prefix'        => '<div id="div-brutus-breadcrumb-collapse">', // jquery hook to show/hide optional widgets
@@ -47,62 +46,60 @@ function brutus_settings($saved_settings, $subtheme_defaults = array()) {
   $form['brutus_breadcrumb']['brutus_breadcrumb_home'] = array(
     '#type'          => 'checkbox',
     '#title'         => t('Show home page link in breadcrumb'),
-    '#default_value' => $settings['brutus_breadcrumb_home'],
+    '#default_value' => theme_get_setting('brutus_breadcrumb_home'),
   );
   $form['brutus_breadcrumb']['brutus_breadcrumb_trailing'] = array(
     '#type'          => 'checkbox',
     '#title'         => t('Append a separator to the end of the breadcrumb'),
-    '#default_value' => $settings['brutus_breadcrumb_trailing'],
+    '#default_value' => theme_get_setting('brutus_breadcrumb_trailing'),
     '#description'   => t('Useful when the breadcrumb is placed just before the title.'),
   );
   $form['brutus_breadcrumb']['brutus_breadcrumb_title'] = array(
     '#type'          => 'checkbox',
     '#title'         => t('Append the content title to the end of the breadcrumb'),
-    '#default_value' => $settings['brutus_breadcrumb_title'],
+    '#default_value' => theme_get_setting('brutus_breadcrumb_title'),
     '#description'   => t('Useful when the breadcrumb is not placed just before the title.'),
     '#suffix'        => '</div>', // #div-zen-breadcrumb
   );
 
-  $form['brutus_block_editing'] = array(
-    '#type'          => 'checkbox',
-    '#title'         => t('Show block editing on hover'),
-    '#description'   => t('When hovering over a block, privileged users will see block editing links.'),
-    '#default_value' => $settings['brutus_block_editing'],
-    '#prefix'        => '<strong>' . t('Block Edit Links:') . '</strong>',
-  );
-
-
-  // Return the form
-  return $form;
-}
-
-
-function brutus_theme_get_default_settings($theme) {
-  $themes = list_themes();
-
-  // Get the default values from the .info file.
-  $defaults = !empty($themes[$theme]->info['settings']) ? $themes[$theme]->info['settings'] : array();
-
-  if (!empty($defaults)) {
-    // Get the theme settings saved in the database.
-    $settings = theme_get_settings($theme);
-    // Don't save the toggle_node_info_ variables.
-    if (module_exists('node')) {
-      foreach (node_get_types() as $type => $name) {
-        unset($settings['toggle_node_info_' . $type]);
-      }
-    }
-    // Save default theme settings.
-    variable_set(
-      str_replace('/', '_', 'theme_' . $theme . '_settings'),
-      array_merge($defaults, $settings)
+ // Search Settings
+  if (module_exists('search')) {
+    $form['brutus_search_container'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Search results'),
+      '#description' => t('What additional information should be displayed on your search results page?'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
     );
-    // If the active theme has been loaded, force refresh of Drupal internals.
-    if (!empty($GLOBALS['theme_key'])) {
-      theme_get_setting('', TRUE);
-    }
+    $form['brutus_search_container']['search_results']['search_snippet'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Display text snippet'),
+      '#default_value' => theme_get_setting('search_snippet'),
+    );
+    $form['brutus_search_container']['search_results']['search_info_type'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Display content type'),
+      '#default_value' => theme_get_setting('search_info_type'),
+    );
+    $form['brutus_search_container']['search_results']['search_info_user'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Display author name'),
+      '#default_value' => theme_get_setting('search_info_user'),
+    );
+    $form['brutus_search_container']['search_results']['search_info_date'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Display posted date'),
+      '#default_value' => theme_get_setting('search_info_date'),
+    );
+    $form['brutus_search_container']['search_results']['search_info_comment'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Display comment count'),
+      '#default_value' => theme_get_setting('search_info_comment'),
+    );
+    $form['brutus_search_container']['search_results']['search_info_upload'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Display attachment count'),
+      '#default_value' => theme_get_setting('search_info_upload'),
+    );
   }
-
-  // Return the default settings.
-  return $defaults;
 }

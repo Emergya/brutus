@@ -1,149 +1,99 @@
-name = brutus
-description = Brutus theme for Drupal 6
-screenshot = images/screenshot.gif
-core = "6.x"
-project = "brutus"
-engine = phptemplate
-version = "6.x"
+name = Brutus
+description = Brutus theme for Drupal 7
+screenshot = 'images/Brutus_logo_html5.jpg'
+core = '7.x'
 
-regions[header_top] = header top 
+regions[header_top] = Header top
 regions[header] = Header
-regions[left] = First sidebar
-regions[right] = Second sidebar
+regions[highlighted] = Highlighted
+regions[help] = Help
+regions[sidebar_first] = Left sidebar
+regions[sidebar_second] = Right sidebar
 regions[content_top] = Content top
-regions[node_top] = node top 
-regions[content] = content
-regions[node_bottom] = node bottom
-regions[content_bottom] = content bottom
-regions[footer] = footer
-regions[footer_bottom] = footer bottom 
+regions[node_top] = Node top
+regions[content] = Content
+regions[node_bottom] = Node bottom
+regions[content_bottom] = Content bottom
+regions[footer] = Footer
+regions[footer_bottom] = Footer bottom
+regions[node_col_left] = Left Column node
+regions[node_col_right] = Right Column node
 
 features[] = logo
 features[] = name
 features[] = slogan
-features[] = mission
 features[] = node_user_picture
 features[] = comment_user_picture
-features[] = search
 features[] = favicon
-features[] = primary_links
-features[] = secondary_links
+features[] = main_menu
+features[] = secondary_menu
 
+stylesheets[all][] = css/superfish-navbar.css
+stylesheets[all][] = css/superfish-vertical.css
+stylesheets[all][] = css/superfish.css
+stylesheets[all][] = css/boilerplate.css
 stylesheets[all][] = css/brutus.css
+
 scripts[] = js/browser.js
-scripts[] = js/custom.js
+scripts[] = js/brutus.js
+scripts[] = js/modernizr.js
+scripts[] = js/formalize.js
+scripts[] = js/jquery.easing.1.3.js
 //scripts[] = js/jquery.beforeafter.min.js
-
-; Widths columns, 960px/col
-skinr[col-width][title] = Width (16 column grid)
-skinr[col-width][type] = select
-skinr[col-width][features][] = block
-skinr[col-width][features][] = views_view
-skinr[col-width][options][1][label] = 1 unit wide 
-skinr[col-width][options][1][class] = col1
-skinr[col-width][options][2][label] = 2 unit wide 
-skinr[col-width][options][2][class] = col2
-skinr[col-width][options][3][label] = 3 unit wide 
-skinr[col-width][options][3][class] = col3
-skinr[col-width][options][4][label] = 4 unit wide 
-skinr[col-width][options][4][class] = col4
-skinr[col-width][options][5][label] = 5 unit wide 
-skinr[col-width][options][5][class] = col5
-skinr[col-width][options][6][label] = 6 unit wide 
-skinr[col-width][options][6][class] = col6
-skinr[col-width][options][7][label] = 7 unit wide 
-skinr[col-width][options][7][class] = col7
-skinr[col-width][options][8][label] = 8 unit wide 
-skinr[col-width][options][8][class] = col8
-skinr[col-width][options][9][label] = 9 unit wide 
-skinr[col-width][options][9][class] = col9
-skinr[col-width][options][10][label] = 10 unit wide 
-skinr[col-width][options][10][class] = col10
-skinr[col-width][options][11][label] = 11 unit wide 
-skinr[col-width][options][11][class] = col11
-skinr[col-width][options][12][label] = 12 unit wide 
-skinr[col-width][options][12][class] = col12
-skinr[col-width][options][13][label] = 13 unit wide 
-skinr[col-width][options][13][class] = col13
-skinr[col-width][options][14][label] = 14 unit wide 
-skinr[col-width][options][14][class] = col14
-skinr[col-width][options][15][label] = 15 unit wide 
-skinr[col-width][options][15][class] = col15
-skinr[col-width][options][16][label] = 16 unit wide 
-skinr[col-width][options][16][class] = col16
-
-; Block first or last options
-skinr[first-last-position][title] = First / Last
-skinr[first-last-position][type] = checkboxes
-skinr[first-last-position][description] = Make first block or last block
-skinr[first-last-position][features][] = block
-skinr[first-last-position][options][1][label] = first: margin 0 left blocks
-skinr[first-last-position][options][1][class] = first
-skinr[first-last-position][options][2][label] = last: margin 0 right blocks
-skinr[first-last-position][options][2][class] = last
-
-; General style - Equal heights
-skinr[brutus-equal-heights][title] = Equal heights
-skinr[brutus-equal-heights][type] = checkboxes
-skinr[brutus-equal-heights][description] = Make blocks in a region the same height
-skinr[brutus-equal-heights][features][] = block
-skinr[brutus-equal-heights][scripts][] = js/equalHeight.js
-skinr[brutus-equal-heights][options][1][label] = Equal heights: equalize the heights of blocks
-skinr[brutus-equal-heights][options][1][class] = equal-heights equalHeight
-
-; List styles
-skinr[brutus-multicol][title] = List columns
-skinr[brutus-multicol][type] = select
-skinr[brutus-multicol][description] = Put items in lists (menus, list views, etc.) in multiple columns
-skinr[brutus-multicol][features][] = block
-skinr[brutus-multicol][features][] = panels_display
-skinr[brutus-multicol][features][] = panels_pane
-skinr[brutus-multicol][features][] = panels_panel
-skinr[brutus-multicol][features][] = views_view
-skinr[brutus-multicol][options][1][label] = 2-column list/menu (50%/50%)
-skinr[brutus-multicol][options][1][class] = brutus-2-col-list clearfix
-skinr[brutus-multicol][options][2][label] = 3-column list/menu (33%/33%/33%)
-skinr[brutus-multicol][options][2][class] = brutus-3-col-list clearfix
-
-; List Inline
-skinr[brutus-inline][title] = List Inline
-skinr[brutus-inline][type] = checkboxes
-skinr[brutus-inline][description] = Put items in lists (menus, list views, etc.) in one column
-skinr[brutus-inline][features][] = block
-skinr[brutus-inline][features][] = panels_display
-skinr[brutus-inline][features][] = panels_pane
-skinr[brutus-inline][features][] = panels_panel
-skinr[brutus-inline][features][] = views_view
-skinr[brutus-inline][options][1][label] = Inline list
-skinr[brutus-inline][options][1][class] = brutus-inline
-
-; Block positioning
-skinr[brutus-position][title] = Block position
-skinr[brutus-position][type] = select
-skinr[brutus-position][description] = Change the position of this block (default is to float to the left)
-skinr[brutus-position][features][] = block
-skinr[brutus-position][options][1][label] = Float block to the right
-skinr[brutus-position][options][1][class] = brutus-right
-skinr[brutus-position][options][2][label] = Position block in the center
-skinr[brutus-position][options][2][class] = brutus-center
-skinr[brutus-position][options][3][label] = Clear floats (block drops to a new line)
-skinr[brutus-position][options][3][class] = brutus-clear
-
-; Content alignment
-skinr[brutus-alignment][title] = Content alignment
-skinr[brutus-alignment][type] = select
-skinr[brutus-alignment][description] = Default is left aligned content
-skinr[brutus-alignment][options][1][label] = Center align content within its container
-skinr[brutus-alignment][options][1][class] = brutus-center-content
-skinr[brutus-alignment][options][2][label] = Right align content within its container
-skinr[brutus-alignment][options][2][class] = brutus-right-content
-
 
 settings[brutus_zen_tabs]             = 1
 settings[brutus_block_editing]        = 1
 settings[brutus_breadcrumb]           = yes
-settings[brutus_breadcrumb_separator] = ' » '
+settings[brutus_breadcrumb_separator] = ' » ' 
 settings[brutus_breadcrumb_home]      = 1
 settings[brutus_breadcrumb_trailing]  = 1
 settings[brutus_breadcrumb_title]     = 1
+
+
+; Information added by drush on 2012-04-16
+version = "unknown"
+project = "redborder"
+datestamp = "1334605346"
+
+
+
+; Information added by drush on 2012-04-17
+version = "unknown"
+project = "redborder"
+datestamp = "1334615909"
+
+
+
+; Information added by drush on 2012-04-18
+version = "unknown"
+project = "redborder"
+datestamp = "1334707947"
+
+
+
+; Information added by drush on 2012-04-20
+version = "unknown"
+project = "redborder"
+datestamp = "1334959072"
+
+
+
+; Information added by drush on 2012-04-21
+version = "unknown"
+project = "redborder"
+datestamp = "1335016176"
+
+
+
+; Information added by drush on 2012-04-21
+version = "unknown"
+project = "redborder"
+datestamp = "1335041062"
+
+
+
+; Information added by drush on 2012-04-22
+version = "unknown"
+project = "redborder"
+datestamp = "1335120793"
 

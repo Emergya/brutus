@@ -11,13 +11,14 @@ namespace :build do
 
   desc "Compile sass files"
   task :sass do
-    puts "Compiling sass..."
+    puts "Compiling sass... Brutus cocinandose...."
     system("compass compile")
   end
 
   desc "Copy files to theme dir"
   task :copy do
     puts "Copying files to #{theme_path}/#{theme_name}"
+    puts "Su Brutus listo, gracias."
     system("rm -rf #{theme_path}/#{theme_name}")
     system("cp -r brutus #{theme_path}/#{theme_name}")
   end

@@ -5,7 +5,6 @@
  * Browser Reset
  * -------------
  * For a more complete reset, go to http://developer.yahoo.com/yui/reset/
-/* line 9, ../sass/default.sass
 
 *
   margin: 0
@@ -14,10 +13,8 @@
 /* Clear Floats Without Structural Markup
  * ---------------------------------------
  * http://www.positioniseverything.net/easyclearing.html
-/* line 17, ../sass/default.sass
 
 .clearfix
-  display: inline-block
   &:after
     content: "."
     display: block
@@ -25,24 +22,20 @@
     clear: both
     visibility: hidden
 
-/* line 19, ../sass/default.sass
 
 /* Hides from IE-mac \
-/* line 27, ../sass/default.sass
 
 * html .clearfix
   height: 1%
 
 /* End hide from IE-mac
 /* clear classes
-/* line 36, ../sass/default.sass
 
 
 /* "Skip to Main Content" link
  * ---------------------------
  * This link useful for both visually impaired people and those with mobility impairments
  * who cannot use a mouse. http://www.webaim.org/techniques/css/invisiblecontent/
-/* line 60, ../sass/default.sass
 
 #skip a
   &:link, &:hover, &:visited
@@ -56,11 +49,6 @@
     position: static
     width: auto
     height: auto
-
-/* line 67, ../sass/default.sass
-
-/* bug fix with views 2 edit links.
-/* line 73, ../sass/default.sass
 
 div
   &.view div.views-admin-links
@@ -91,11 +79,59 @@ div
     &:hover .edit
       display: block
 
-/* Rollover edit links for blocks.
-/* line 77, ../sass/default.sass
+/*.views-displays
+  float: none
 
-/* line 79, ../sass/default.sass
+/* http://meyerweb.com/eric/tools/css/reset/ 
+   v2.0 | 20110126
+   License: none (public domain)
+*/
 
-/* line 95, ../sass/default.sass
+html, body, div, span, applet, object, iframe,
+h1, h2, h3, h4, h5, h6, p, blockquote, pre,
+a, abbr, acronym, address, big, cite, code,
+del, dfn, em, img, ins, kbd, q, s, samp,
+small, strike, strong, sub, sup, tt, var,
+b, u, i, center,
+dl, dt, dd, ol, ul, li,
+fieldset, form, label, legend,
+table, caption, tbody, tfoot, thead, tr, th, td,
+article, aside, canvas, details, embed, 
+figure, figcaption, footer, header, hgroup, 
+menu, nav, output, ruby, section, summary,
+time, mark, audio, video 
+  margin: 0
+  padding: 0
+  border: 0
+ /** font: inherit **/
+  font-size: 100%
+  vertical-align: baseline
 
-/* line 100, ../sass/default.sass
+
+/* HTML5 display-role reset for older browsers
+article, aside, details, figcaption, figure, 
+footer, header, hgroup, menu, nav, section 
+  display: block
+
+body 
+  line-height: 1
+
+ol, ul 
+  list-style: none
+
+blockquote, q 
+  quotes: none
+
+blockquote:before, blockquote:after,
+q:before, q:after 
+  content: ''
+  content: none
+
+table 
+  border-collapse: collapse
+  border-spacing: 0
+
+em
+  font-style: italic
+strong
+  font-size: bold

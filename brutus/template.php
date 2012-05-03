@@ -1,89 +1,288 @@
 <?php
+
+/**
+ * @file
+ * Contains theme override functions and process & preprocess functions
+ */
+
 // Auto-rebuild the theme registry during theme development.
 if (theme_get_setting('brutus_rebuild_registry')) {
-  drupal_rebuild_theme_registry();
+  system_rebuild_theme_data();
+  drupal_theme_rebuild();
 }
 
-function brutus_theme(&$existing, $type, $theme, $path) {
-  // get all directories inside theme 
-  // http://www.3oheme.com/blog/como-hacer-que-drupal-busque-ficheros-tpl-en-todos-los-subdirectorios-de-tu-theme
- 
-  $patho = drupal_get_path('theme', 'brutus');
-  $path = $patho . '/' . 'templates';
-  $results = scandir($path);
-    foreach ($results as $result) {
-        if ($result !== '.' && $result !== '..' && is_dir($path . '/' . $result)) {
-              $existing['node']['theme paths'][] = $path . '/' . '/' . $result;
-              $existing['block']['theme paths'][] = $path . '/' . $result;
-              $existing['page']['theme paths'][] = $path . '/' . $result;
-              $existing['content_field']['theme paths'][] = $path . '/' . $result;
-            }
-      }
-    return array();
-  }    
+/**
+ * Implements template_html_head_alter();
+ *
+ * Changes the default meta content-type tag to the shorter HTML5 version
+ */
+function brutus_html_head_alter(&$head_elements) {
+  $head_elements['system_meta_content_type']['#attributes'] = array(
+    'charset' => 'utf-8'
+  );
+}
 
+/**
+ * Implements template_proprocess_search_block_form().
+ *
+ * Changes the search form to use the HTML5 "search" input attribute
+ */
+function brutus_preprocess_search_block_form(&$vars) {
+  $vars['search_form'] = str_replace('type="text"', 'type="search"', $vars['search_form']);
+}
+
+/**
+ * Implements template_preprocess().
+ */
+function brutus_preprocess(&$vars, $hook) {
+  $vars['brutus_path'] = base_path() . path_to_theme();
+}
+
+/**
+ * Implements template_preprocess_html().
+ */
+function brutus_preprocess_html(&$vars) {
+  
+  $vars['doctype'] = '<!DOCTYPE html>' . "\n";
+  $vars['html5shim'] = '<!--[if lt IE 9]><script src="'. base_path() . path_to_theme() .'/scripts/html5forIE.js"></script><![endif]-->';
+  
+  if (isset($vars['node'])) {
+    // For full nodes.
+    $vars['classes_array'][] = ($vars['node']) ? 'full-node' : '';
+    // For forums.
+    $vars['classes_array'][] = (($vars['node']->type == 'forum') || (arg(0) == 'forum')) ? 'forum' : '';
+  }
+  else {
+    // Forums.
+    $vars['classes_array'][] = (arg(0) == 'forum') ? 'forum' : '';
+  }
+  if (module_exists('panels') && function_exists('panels_get_current_page_display')) {
+    $vars['classes_array'][] = (panels_get_current_page_display()) ? 'panels' : '';
+  }
+  
+  // Since menu is rendered in preprocess_page we need to detect it here to add body classes
+  $has_main_menu = theme_get_setting('toggle_main_menu');
+  $has_secondary_menu = theme_get_setting('toggle_secondary_menu');
+
+  /* Add extra classes to body for more flexible theming */
+
+  if ($has_main_menu or $has_secondary_menu) {
+    $vars['classes_array'][] = 'with-navigation';
+  }
+
+  if ($has_secondary_menu) {
+    $vars['classes_array'][] = 'with-subnav';
+  }
+
+  if (!empty($vars['page']['featured'])) {
+    $vars['classes_array'][] = 'featured';
+  }
+
+  if ($vars['is_admin']) {
+    $vars['classes_array'][] = 'admin';
+  }
+
+  if (!empty($vars['page']['sidebar_first'])) {
+    $vars['classes_array'][] = 'two-sidebar';
+  }
+  if (!empty($vars['page']['sidebar_second'])) {
+    $vars['classes_array'][] = 'two-sidebar';
+  }
+  if (!empty($vars['page']['sidebar_first'])) {
+    $vars['classes_array'][] = 'sidebar-left';
+  }
+
+  if (!empty($vars['page']['sidebar_second'])) {
+    $vars['classes_array'][] = 'sidebar-right';
+  }
+
+  if (!empty($vars['page']['header_top'])) {
+    $vars['classes_array'][] = 'header_top';
+  }
+
+  if ($vars['is_admin']) {
+    $vars['classes_array'][] = 'admin';
+  }
+
+  if (!$vars['is_front']) {
+    // Add unique classes for each page and website section
+    $path = drupal_get_path_alias($_GET['q']);
+    $temp = explode('/', $path, 2);
+    $section = array_shift($temp);
+    $page_name = array_shift($temp);
+
+    if (isset($page_name)) {
+      $vars['classes_array'][] = brutus_id_safe('page-' . $page_name);
+    }
+
+    $vars['classes_array'][] = brutus_id_safe('section-' . $section);
+
+    // add template suggestions
+    $vars['theme_hook_suggestions'][] = "page__section__" . $section;
+    $vars['theme_hook_suggestions'][] = "page__" . $page_name;
+
+    if (arg(0) == 'node') {
+      if (arg(1) == 'add') {
+        if ($section == 'node') {
+          array_pop($vars['classes_array']); // Remove 'section-node'
+        }
+        $vars['classes_array'][] = 'section-node-add'; // Add 'section-node-add'
+      } elseif (is_numeric(arg(1)) && (arg(2) == 'edit' || arg(2) == 'delete')) {
+        if ($section == 'node') {
+          array_pop($vars['classes_array']); // Remove 'section-node'
+        }
+        $vars['classes_array'][] = 'section-node-' . arg(2); // Add 'section-node-edit' or 'section-node-delete'
+      }
+    }
+  }
+}
 
 /**
  * Page preprocessing
  */
-function brutus_preprocess_page(&$vars) {
-  global $language, $theme_key, $theme_info, $user;
+function brutus_preprocess_page(&$vars, $hook) {
+  if (isset($vars['node_title'])) {
+    $vars['title'] = $vars['node_title'];
+  }
+  // Site navigation links.
+  $vars['main_menu_links'] = '';
+  if (isset($vars['main_menu'])) {
+    $vars['main_menu_links'] = theme('links__system_main_menu', array(
+      'links' => $vars['main_menu'],
+      'attributes' => array(
+        'id' => 'main-menu',
+        'class' => array('inline', 'main-menu'),
+      ),
+      'heading' => array(
+        'text' => t('Main menu'),
+        'level' => 'h2',
+        'class' => array('element-invisible'),
+      ),
+    ));
+  }
+  $vars['secondary_menu_links'] = '';
+  if (isset($vars['secondary_menu'])) {
+    $vars['secondary_menu_links'] = theme('links__system_secondary_menu', array(
+      'links' => $vars['secondary_menu'],
+      'attributes' => array(
+        'id'    => 'secondary-menu',
+        'class' => array('inline', 'secondary-menu'),
+      ),
+      'heading' => array(
+        'text' => t('Secondary menu'),
+        'level' => 'h2',
+        'class' => array('element-invisible'),
+      ),
+    ));
+  }
+  // Adding classes wether #navigation is here or not
+  if (!empty($vars['main_menu']) or !empty($vars['sub_menu'])) {
+    $vars['classes_array'][] = 'with-navigation';
+  }
+  if (!empty($vars['secondary_menu'])) {
+    $vars['classes_array'][] = 'with-subnav';
+  }
+  // Since the title and the shortcut link are both block level elements,
+  // positioning them next to each other is much simpler with a wrapper div.
+  if (!empty($vars['title_suffix']['add_or_remove_shortcut']) && $vars['title']) {
+    // Add a wrapper div using the title_prefix and title_suffix render elements.
+    $vars['title_prefix']['shortcut_wrapper'] = array(
+      '#markup' => '<div class="shortcut-wrapper clearfix">',
+      '#weight' => 100,
+    );
+    $vars['title_suffix']['shortcut_wrapper'] = array(
+      '#markup' => '</div>',
+      '#weight' => -99,
+    );
+    // Make sure the shortcut link is the first item in title_suffix.
+    $vars['title_suffix']['add_or_remove_shortcut']['#weight'] = -100;
+  }
+  
+  if(!theme_get_setting('brutus_feed_icons')) {
+    $vars['feed_icons'] = '';
+  }
+if (isset($vars['node'])) {
+  // If the node type is "blog" the template suggestion will be "page--blog.tpl.php".
+   $vars['theme_hook_suggestions'][] = 'page__'. str_replace('_', '--', $vars['node']->type);
+  }
 
-  // Add to array of helpful body classes
-  $body_classes = explode(' ', $vars['body_classes']);                                               // Default classes
-  if (isset($vars['node'])) {
-    $body_classes[] = ($vars['node']) ? 'full-node' : '';                                            // Full node
-    $body_classes[] = (($vars['node']->type == 'forum') || (arg(0) == 'forum')) ? 'forum' : '';      // Forum page
-  }
-  else {
-    $body_classes[] = (arg(0) == 'forum') ? 'forum' : '';                                            // Forum page
-  }
-  if (module_exists('panels') && function_exists('panels_get_current_page_display')) {               // Panels page
-    $body_classes[] = (panels_get_current_page_display()) ? 'panels' : '';
-  }
-  $body_classes[] = 'layout-'. (($vars['left']) ? 'first-main' : 'main') . (($vars['right']) ? '-last' : '');  // Sidebars active
-  $body_classes = array_filter($body_classes);                                                       // Remove empty elements
-  $vars['body_classes'] = implode(' ', $body_classes);                                               // Create class list separated by spaces
-  $vars['body_id'] = 'pid-' . strtolower(preg_replace('/[^a-zA-Z0-9-]+/', '-', drupal_get_path_alias($_GET['q'])));            // Add a unique page id
-
-  // Generate links tree & add Superfish class if dropdown enabled, else make standard primary links
-  $vars['primary_links_tree'] = '';
-  if ($vars['primary_links']) {
-    if (theme_get_setting('primary_menu_dropdown') == 1) {
-      // Check for menu internationalization
-      if (module_exists('i18nmenu')) {
-        $vars['primary_links_tree'] = i18nmenu_translated_tree(variable_get('menu_primary_links_source', 'primary-links'));
-      }
-      else {
-        $vars['primary_links_tree'] = menu_tree(variable_get('menu_primary_links_source', 'primary-links'));
-      }
-      $vars['primary_links_tree'] = preg_replace('/<ul class="menu/i', '<ul class="menu sf-menu', $vars['primary_links_tree'], 1);
-    }
-    else {
-      $vars['primary_links_tree'] = theme('links', $vars['primary_links'], array('class' => 'menu'));
+  // Add first/last classes to node listings about to be rendered.
+  if (isset($vars['page']['content']['system_main']['nodes'])) {
+    // All nids about to be loaded (without the #sorted attribute).
+    $nids = element_children($vars['page']['content']['system_main']['nodes']);
+    // Only add first/last classes if there is more than 1 node being rendered.
+    if (count($nids) > 1) {
+      $first_nid = reset($nids);
+      $last_nid = end($nids);
+      $first_node = $vars['page']['content']['system_main']['nodes'][$first_nid]['#node'];
+      $first_node->classes_array = array('first');
+      $last_node = $vars['page']['content']['system_main']['nodes'][$last_nid]['#node'];
+      $last_node->classes_array = array('last');
     }
   }
 }
+  
 
 /**
  * Node preprocessing
  */
 function brutus_preprocess_node(&$vars) {
-  // Build array of handy node classes
-  $node_classes = array();
-  $node_classes[] = $vars['zebra'];                                      // Node is odd or even
-  $node_classes[] = (!$vars['node']->status) ? 'node-unpublished' : '';  // Node is unpublished
-  $node_classes[] = ($vars['sticky']) ? 'sticky' : '';                   // Node is sticky
-  $node_classes[] = (isset($vars['node']->teaser)) ? 'teaser' : 'full-node';    // Node is teaser or full-node
-  $node_classes[] = 'node-type-'. $vars['node']->type;                   // Node is type-x, e.g., node-type-page
-  $node_classes[] = (isset($vars['skinr'])) ? $vars['skinr'] : '';       // Add Skinr classes if present
-  $node_classes = array_filter($node_classes);                           // Remove empty elements
-  $vars['node_classes'] = implode(' ', $node_classes);                   // Implode class list with spaces
 
-  // Add node_top and node_bottom region content
-  $vars['node_top'] = theme('blocks', 'node_top');
-  $vars['node_bottom'] = theme('blocks', 'node_bottom');
+$vars['view_mode'] = $vars['elements']['#view_mode'];
+  // Provide a distinct $teaser boolean.
+  $vars['teaser'] = $vars['view_mode'] == 'teaser';
+  $vars['node'] = $vars['elements']['#node'];
+  $node = $vars['node'];
 
+  $vars['date']      = format_date($node->created);
+  $vars['name']      = theme('username', array('account' => $node));
+
+  $uri = entity_uri('node', $node);
+  $vars['node_url']  = url($uri['path'], $uri['options']);
+  $vars['title']     = check_plain($node->title);
+  $vars['page']      = $vars['view_mode'] == 'full' && node_is_page($node);
+
+  // Flatten the node object's member fields.
+  $vars = array_merge((array) $node, $vars);
+  // Clean up name so there are no underscores.
+  $node = $vars['node'];
+  $vars['theme_hook_suggestions'][] = 'node__' . $node->type;
+  $vars['theme_hook_suggestions'][] = 'node__' . $node->nid;
+ // Add to array of handy node classes
+  $vars['classes_array'][] = $vars['zebra'];                              // Node is odd or even
+  $vars['classes_array'][] = (!$vars['teaser']) ? 'full-node' : '';       // Node is teaser or full-node
+
+  $node_top_blocks = block_get_blocks_by_region('node_top');
+  $node_bottom_blocks = block_get_blocks_by_region('node_bottom');
+  if ($node_top_blocks) {
+    $vars['node_top'] = $node_top_blocks; 
+  }
+  if ($node_bottom_blocks) {
+    $vars['node_bottom'] = $node_bottom_blocks;
+  }
+
+  // Node is published
+  $vars['classes_array'][] = ($vars['status']) ? 'published' : 'unpublished';
+
+  // Node has comments?
+  $vars['classes_array'][] = ($vars['comment']) ? 'with-comments' : 'no-comments';
+
+  if ($vars['sticky']) {
+    $vars['classes_array'][] = 'sticky'; // Node is sticky
+  }
+
+  if ($vars['promote']) {
+    $vars['classes_array'][] = 'promote'; // Node is promoted to front page
+  }
+
+
+  if ($vars['uid'] && $vars['uid'] === $GLOBALS['user']->uid) {
+    $classes[] = 'node-mine'; // Node is authored by current user.
+  }
+  
+  $vars['submitted'] = t('Submitted by !username on', array('!username' => $vars['name']));
+  $vars['submitted_date'] = t('!datetime', array('!datetime' => $vars['date']));
+  $vars['submitted_pubdate'] = format_date($vars['created'], 'custom', 'Y-m-d');
 }
 
 /**
@@ -91,12 +290,162 @@ function brutus_preprocess_node(&$vars) {
  * Add view type class (e.g., node, teaser, list, table)
  */
 function brutus_preprocess_views_view(&$vars) {
-  $vars['css_name'] = $vars['css_name'] .' view-style-'. views_css_safe(strtolower($vars['view']->type));
+  $vars['css_name'] = $vars['css_name'] . ' view-style-' . drupal_clean_css_identifier(strtolower($vars['view']->plugin_name));
+}
+
+/*
+ *	This function create the EDIT LINKS for blocks and menus blocks.
+ *	When overing a block (except in IE6), some links appear to edit
+ *	or configure the block. You can then edit the block, and once you are
+ *	done, brought back to the first page.
+ *
+ * @param $vars
+ *   A sequential array of variables to pass to the theme template.
+ * @param $hook
+ *   The name of the theme function being called ("block" in this case.)
+ */ 
+
+function brutus_preprocess_block(&$vars, $hook) {
+  // Add a striping class.
+  $vars['classes_array'][] = 'block-' . $vars['block_zebra'];
+
+  // Add first/last block classes
+  $first_last = "";
+  // If block id (count) is 1, it's first in region.
+  if ($vars['block_id'] == '1') {
+    $first_last = "first";
+    $vars['classes_array'][] = $first_last;
+  }
+  // Count amount of blocks about to be rendered in that region.
+  $block_count = count(block_list($vars['elements']['#block']->region));
+  if ($vars['block_id'] == $block_count) {
+    $first_last = "last";
+    $vars['classes_array'][] = $first_last;
+  }
+  if ($vars['block']->region == 'header') {
+    $vars['title_attributes_array']['class'][] = 'element-invisible';
+  }
+}
+
+/**
+ * Implements theme_menu_tree().
+ */
+function brutus_menu_tree($vars) {
+  return '<ul class="menu clearfix">' . $vars['tree'] . '</ul>';
+}
+
+/**
+ * Implements theme_field__field_type().
+ */
+function brutus_field__taxonomy_term_reference($vars) {
+  $output = '';
+
+  // Render the label, if it's not hidden.
+  if (!$vars['label_hidden']) {
+    $output .= '<h3 class="field-label">' . $vars['label'] . ': </h3>';
+  }
+
+  // Render the items.
+  $output .= ( $vars['element']['#label_display'] == 'inline') ? '<ul class="links inline">' : '<ul class="links">';
+  foreach ($vars['items'] as $delta => $item) {
+    $output .= '<li class="taxonomy-term-reference-' . $delta . '"' . $vars['item_attributes'][$delta] . '>' . drupal_render($item) . '</li>';
+  }
+  $output .= '</ul>';
+
+  // Render the top-level DIV.
+  $output = '<div class="' . $vars['classes'] . (!in_array('clearfix', $vars['classes_array']) ? ' clearfix' : '') . '">' . $output . '</div>';
+
+  return $output;
+}
+
+function brutus_id_safe($string) {
+  // Strip accents
+  $accents = '/&([A-Za-z]{1,2})(tilde|grave|acute|circ|cedil|uml|lig);/';
+  $string = preg_replace($accents, '$1', htmlentities(utf8_decode($string)));
+  // Replace with dashes anything that isn't A-Z, numbers, dashes, or underscores.
+  $string = strtolower(preg_replace('/[^a-zA-Z0-9_-]+/', '-', $string));
+  // If the first character is not a-z, add 'n' in front.
+  if (!ctype_lower($string{0})) { // Don't use ctype_alpha since its locale aware.
+    $string = 'id' . $string;
+  }
+  return $string;
+}
+
+/**
+ * Generate doctype for templates
+ */
+function _brutus_doctype() {
+  return '<!DOCTYPE html>' . "\n";
+}
+
+/**
+ * Generate the HTML output for a menu link and submenu.
+ *
+ * @param $vars
+ *   An associative array containing:
+ *   - element: Structured array data for a menu link.
+ *
+ * @return
+ *   A themed HTML string.
+ *
+ * @ingroup themeable
+ */
+function brutus_menu_link(array $vars) {
+  $element = $vars['element'];
+  $sub_menu = '';
+
+  if ($element['#below']) {
+    $sub_menu = drupal_render($element['#below']);
+  }
+
+  $output = l($element['#title'], $element['#href'], $element['#localized_options']);
+  // Adding a class depending on the TITLE of the link (not constant)
+  //$element['#attributes']['id'][] = brutus_id_safe($element['#title']);
+  $element['#attributes']['class'][] = brutus_id_safe($element['#title']);
+  // Adding a class depending on the ID of the link (constant)
+  $element['#attributes']['class'][] = 'mid-' . $element['#original_link']['mlid'];
+  return '<li' . drupal_attributes($element['#attributes']) . '>' . $output . $sub_menu . "</li>\n";
+}
+
+function brutus_preprocess_menu_local_task(&$vars) {
+  $link = & $vars['element']['#link'];
+
+  // If the link does not contain HTML already, check_plain() it now.
+  // After we set 'html'=TRUE the link will not be sanitized by l().
+  if (empty($link['localized_options']['html'])) {
+    $link['title'] = check_plain($link['title']);
+  }
+
+  $link['localized_options']['html'] = TRUE;
+  $link['title'] = '<span class="tab">' . $link['title'] . '</span>';
+}
+
+/**
+ *  Duplicate of theme_menu_local_tasks() but adds clearfix to tabs.
+ */
+function brutus_menu_local_tasks(&$vars) {
+  $output = '';
+
+  if (!empty($vars['primary'])) {
+    $vars['primary']['#prefix'] = '<h2 class="element-invisible">' . t('Primary tabs') . '</h2>';
+    $vars['primary']['#prefix'] .= '<ul class="tabs primary clearfix">';
+    $vars['primary']['#suffix'] = '</ul>';
+    $output .= drupal_render($vars['primary']);
+  }
+
+  if (!empty($vars['secondary'])) {
+    $vars['secondary']['#prefix'] = '<h2 class="element-invisible">' . t('Secondary tabs') . '</h2>';
+    $vars['secondary']['#prefix'] .= '<ul class="tabs secondary clearfix">';
+    $vars['secondary']['#suffix'] = '</ul>';
+    $output .= drupal_render($vars['secondary']);
+  }
+
+  return $output;
 }
 
 // Add Zen Tabs styles
-if (theme_get_setting('brutus_zen_tabs')) {
-  drupal_add_css( drupal_get_path('theme', 'brutus') .'/css/tabs.css', 'theme', 'screen');
+if (theme_get_setting('brutus_tabs')) {
+  drupal_add_css( drupal_get_path('theme', 'brutus') . '/css/tabs.css');
 }
 
 /*
@@ -114,244 +463,23 @@ function brutus_preprocess_comment_wrapper(&$vars) {
   $classes[] = 'comment-wrapper';
   
   // Provide skinr support.
-  if (module_exists('skinr')) {
+/*  if (module_exists('skinr')) {
     $classes[] = $vars['skinr'];
-  }
+}*/
   $vars['classes'] = implode(' ', $classes);
 }
 
 
-/*
- *	This function create the EDIT LINKS for blocks and menus blocks.
- *	When overing a block (except in IE6), some links appear to edit
- *	or configure the block. You can then edit the block, and once you are
- *	done, brought back to the first page.
- *
- * @param $vars
- *   A sequential array of variables to pass to the theme template.
- * @param $hook
- *   The name of the theme function being called ("block" in this case.)
- */ 
 
-function brutus_preprocess_block(&$vars, $hook) {
-    $block = $vars['block'];
-
-    // special block classes
-    $classes = array('block');
-    $classes[] = brutus_id_safe('block-' . $vars['block']->module);
-    $classes[] = brutus_id_safe('block-' . $vars['block']->region);
-    $classes[] = brutus_id_safe('block-id-' . $vars['block']->bid);
-    $classes[] = 'clearfix';
-    
-    // support for Skinr Module
-    if (module_exists('skinr')) {
-      $classes[] = $vars['skinr'];
-    }
-    
-    $vars['block_classes'] = implode(' ', $classes); // Concatenate with spaces
-
-    if (theme_get_setting('brutus_block_editing') && user_access('administer blocks')) {
-        // Display 'edit block' for custom blocks.
-        if ($block->module == 'block') {
-          $edit_links[] = l('<span>' . t('edit block') . '</span>', 'admin/build/block/configure/' . $block->module . '/' . $block->delta,
-            array(
-              'attributes' => array(
-                'title' => t('edit the content of this block'),
-                'class' => 'block-edit',
-              ),
-              'query' => drupal_get_destination(),
-              'html' => TRUE,
-            )
-          );
-        }
-        // Display 'configure' for other blocks.
-        else {
-          $edit_links[] = l('<span>' . t('configure') . '</span>', 'admin/build/block/configure/' . $block->module . '/' . $block->delta,
-            array(
-              'attributes' => array(
-                'title' => t('configure this block'),
-                'class' => 'block-config',
-              ),
-              'query' => drupal_get_destination(),
-              'html' => TRUE,
-            )
-          );
-        }
-        // Display 'edit menu' for Menu blocks.
-        if (($block->module == 'menu' || ($block->module == 'user' && $block->delta == 1)) && user_access('administer menu')) {
-          $menu_name = ($block->module == 'user') ? 'navigation' : $block->delta;
-          $edit_links[] = l('<span>' . t('edit menu') . '</span>', 'admin/build/menu-customize/' . $menu_name,
-            array(
-              'attributes' => array(
-                'title' => t('edit the menu that defines this block'),
-                'class' => 'block-edit-menu',
-              ),
-              'query' => drupal_get_destination(),
-              'html' => TRUE,
-            )
-          );
-        }
-        // Display 'edit menu' for Menu block blocks.
-        elseif ($block->module == 'menu_block' && user_access('administer menu')) {
-          list($menu_name, ) = split(':', variable_get("menu_block_{$block->delta}_parent", 'navigation:0'));
-          $edit_links[] = l('<span>' . t('edit menu') . '</span>', 'admin/build/menu-customize/' . $menu_name,
-            array(
-              'attributes' => array(
-                'title' => t('edit the menu that defines this block'),
-                'class' => 'block-edit-menu',
-              ),
-              'query' => drupal_get_destination(),
-              'html' => TRUE,
-            )
-          );
-        }
-        $vars['edit_links_array'] = $edit_links;
-        $vars['edit_links'] = '<div class="edit">' . implode(' ', $edit_links) . '</div>';
-      }
-  }
-
-/*
- * Override or insert PHPTemplate variables into the block templates.
- *
- *  @param $vars
- *    An array of variables to pass to the theme template.
- *  @param $hook
- *    The name of the template being rendered ("comment" in this case.)
+/**
+ * Comment preprocessing
  */
+function brutus_core_preprocess_comment(&$vars) {
+  static $comment_odd = TRUE;                                                                             // Comment is odd or even
 
-function brutus_preprocess_comment(&$vars, $hook) {
-  // Add an "unpublished" flag.
-  $vars['unpublished'] = ($vars['comment']->status == COMMENT_NOT_PUBLISHED);
-
-  // If comment subjects are disabled, don't display them.
-  if (variable_get('comment_subject_field_' . $vars['node']->type, 1) == 0) {
-    $vars['title'] = '';
-  }
-
-  // Special classes for comments.
-  $classes = array('comment');
-  if ($vars['comment']->new) {
-    $classes[] = 'comment-new';
-  }
-  $classes[] = $vars['status'];
-  $classes[] = $vars['zebra'];
-  if ($vars['id'] == 1) {
-    $classes[] = 'first';
-  }
-  if ($vars['id'] == $vars['node']->comment_count) {
-    $classes[] = 'last';
-  }
-  if ($vars['comment']->uid == 0) {
-    // Comment is by an anonymous user.
-    $classes[] = 'comment-by-anon';
-  }
-  else {
-    if ($vars['comment']->uid == $vars['node']->uid) {
-      // Comment is by the node author.
-      $classes[] = 'comment-by-author';
-    }
-    if ($vars['comment']->uid == $GLOBALS['user']->uid) {
-      // Comment was posted by current user.
-      $classes[] = 'comment-mine';
-    }
-  }
-  $vars['classes'] = implode(' ', $classes);
-}
-
-/* 	
- * 	Customize the PRIMARY and SECONDARY LINKS, to allow the admin tabs to work on all browsers
- * 	An implementation of theme_menu_item_link()
- * 	
- * 	@param $link
- * 	  array The menu item to render.
- * 	@return
- * 	  string The rendered menu item.
- */ 	
-
-function brutus_menu_item_link($link) {
-  if (empty($link['localized_options'])) {
-    $link['localized_options'] = array();
-  }
-
-  // If an item is a LOCAL TASK, render it as a tab
-  if ($link['type'] & MENU_IS_LOCAL_TASK) {
-    $link['title'] = '<span class="tab">' . check_plain($link['title']) . '</span>';
-    $link['localized_options']['html'] = TRUE;
-  }
-
-  return l($link['title'], $link['href'], $link['localized_options']);
-}
-
-
-/*
- *  Duplicate of theme_menu_local_tasks() but adds clear-block to tabs.
- */
-
-function brutus_menu_local_tasks() {
-  $output = '';
-  if ($primary = menu_primary_local_tasks()) {
-    if(menu_secondary_local_tasks()) {
-      $output .= '<ul class="tabs primary with-secondary clearfix">' . $primary . '</ul>';
-    }
-    else {
-      $output .= '<ul class="tabs primary clearfix">' . $primary . '</ul>';
-    }
-  }
-  if ($secondary = menu_secondary_local_tasks()) {
-    $output .= '<ul class="tabs secondary clearfix">' . $secondary . '</ul>';
-  }
-  return $output;
-}
-
-/* 	
- * 	Add custom classes to menu item "block"
- */	
-	
-function phptemplate_menu_item($link, $has_children, $menu = '', $in_active_trail = FALSE, $extra_class = NULL) {
-$class = ($menu ? 'expanded' : ($has_children ? 'collapsed' : 'leaf'));
-  if (!empty($extra_class)) {
-    $class .= ' '. $extra_class;
-  }
-  if ($in_active_trail) {
-    $class .= ' active-trail';
-  }
-if (!empty($link)) {
-// remove all HTML tags and make everything lowercase
-$css_id = strtolower(strip_tags($link));
-// remove colons and anything past colons
-if (strpos($css_id, ':')) $css_id = substr ($css_id, 0, strpos($css_id, ':'));
-// Preserve alphanumerics, everything else goes away
-$pattern = '/[^a-z]+/ ';
-$css_id = preg_replace($pattern, '', $css_id);
-$class .= ' '. $css_id;
-}
-return '<li class="'. $class .'">'. $link . $menu ."</li>\n";
-}
-
-/*	
- *	Converts a string to a suitable html ID attribute.
- *	
- *	 http://www.w3.org/TR/html4/struct/global.html#h-7.5.2 specifies what makes a
- *	 valid ID attribute in HTML. This function:
- *	
- *	- Ensure an ID starts with an alpha character by optionally adding an 'n'.
- *	- Replaces any character except A-Z, numbers, and underscores with dashes.
- *	- Converts entire string to lowercase.
- *	
- *	@param $string
- *	  The string
- *	@return
- *	  The converted string
- */	
-
-function brutus_id_safe($string) {
-  // Replace with dashes anything that isn't A-Z, numbers, dashes, or underscores.
-  $string = strtolower(preg_replace('/[^a-zA-Z0-9_-]+/', '-', $string));
-  // If the first character is not a-z, add 'n' in front.
-  if (!ctype_lower($string{0})) { // Don't use ctype_alpha since its locale aware.
-    $string = 'id'. $string;
-  }
-  return $string;
+  // Add to array of handy comment classes
+  $vars['classes_array'][] = $comment_odd ? 'odd' : 'even';
+  $comment_odd = !$comment_odd;
 }
 
 /**
@@ -362,9 +490,30 @@ function brutus_id_safe($string) {
 * @return
 * A string containing the breadcrumb output.
 */
-function brutus_breadcrumb($breadcrumb) {
+function brutus_breadcrumb($variables) {
+  $breadcrumb = $variables['breadcrumb'];
   // Determine if we are to display the breadcrumb.
   $show_breadcrumb = theme_get_setting('brutus_breadcrumb');
+  $path = drupal_get_path_alias($_GET['q']);
+  $temp = explode('/', $path, 3);
+  $section = array_shift($temp);
+  $page_name = array_shift($temp);
+  $third = array_shift($temp);
+  if (($page_name[0] == '') && (!$page_name[1])) { // Esta validación se usa únicamente para poder mostrar breadcrumbs personalizados en el path 'home'                            
+    $breadcrumb = array();
+    $breadcrumb[] = l(t('home'), '<front>');
+  }
+  if (($section == 'products' || $section == 'productos') && !empty($page_name) && !empty($third)) { // Estoy en tercer nivel y es "product", estoy en feature y no en product
+    $parent_path = $section .'/'. $page_name;
+    $breadcrumb = array();
+    $breadcrumb[] = l(t('home'), '<front>');
+    $breadcrumb[] = l($page_name, $parent_path);
+  }
+  if ($section == 'sponsors') { // Esta validación se usa únicamente para poder mostrar breadcrumbs personalizados en el path 'sponsors'                            
+    $breadcrumb = array();
+    $breadcrumb[] = l(t('home'), '<front>');
+    $breadcrumb[] = t('sponsors');
+  } 
   if ($show_breadcrumb == 'yes' || $show_breadcrumb == 'admin' && arg(0) == 'admin') {
 
     // Optionally get rid of the homepage link.
@@ -378,16 +527,75 @@ function brutus_breadcrumb($breadcrumb) {
       $breadcrumb_separator = theme_get_setting('brutus_breadcrumb_separator');
       $trailing_separator = $title = '';
       if (theme_get_setting('brutus_breadcrumb_title')) {
-        if ($title = drupal_get_title()) {
+        $item = menu_get_item();
+        if (!empty($item['tab_parent'])) {
+          // If we are on a non-default tab, use the tab's title.
+          $title = check_plain($item['title']);
+        }
+        else {
+          $title = drupal_get_title();
+        }
+        if ($title) {
           $trailing_separator = $breadcrumb_separator;
         }
       }
       elseif (theme_get_setting('brutus_breadcrumb_trailing')) {
         $trailing_separator = $breadcrumb_separator;
       }
-      return '<div class="breadcrumb">' . implode($breadcrumb_separator, $breadcrumb) . "$trailing_separator$title</div>";
+
+      // Provide a navigational heading to give context for breadcrumb links to
+      // screen-reader users. Make the heading invisible with .element-invisible.
+      $heading = '<h2 class="element-invisible">' . t('You are here') . '</h2>';
+
+      return $heading . '<div class="breadcrumb">' . implode($breadcrumb_separator, $breadcrumb) . $trailing_separator . $title . '</div>';
     }
   }
   // Otherwise, return an empty string.
   return '';
+}
+
+/**
+ * Search result preprocessing
+ */
+function brutus_preprocess_search_result(&$vars) {
+  static $search_zebra = 'even';
+
+  $search_zebra = ($search_zebra == 'even') ? 'odd' : 'even';
+  $vars['search_zebra'] = $search_zebra;
+  $result = $vars['result'];
+  $vars['url'] = check_url($result['link']);
+  $vars['title'] = check_plain($result['title']);
+
+  // Check for snippet existence. User search does not include snippets.
+  $vars['snippet'] = '';
+  if (isset($result['snippet']) && theme_get_setting('search_snippet')) {
+    $vars['snippet'] = $result['snippet'];
+  }
+
+  $info = array();
+  if (!empty($result['type']) && theme_get_setting('search_info_type')) {
+    $info['type'] = check_plain($result['type']);
+  }
+  if (!empty($result['user']) && theme_get_setting('search_info_user')) {
+    $info['user'] = $result['user'];
+  }
+  if (!empty($result['date']) && theme_get_setting('search_info_date')) {
+    $info['date'] = format_date($result['date'], 'small');
+  }
+  if (isset($result['extra']) && is_array($result['extra'])) {
+    // $info = array_merge($info, $result['extra']);  Drupal bug?  [extra] array not keyed with 'comment' & 'upload'
+    if (!empty($result['extra'][0]) && theme_get_setting('search_info_comment')) {
+      $info['comment'] = $result['extra'][0];
+    }
+    if (!empty($result['extra'][1]) && theme_get_setting('search_info_upload')) {
+      $info['upload'] = $result['extra'][1];
+    }
+  }
+
+  // Provide separated and grouped meta information.
+  $vars['info_split'] = $info;
+  $vars['info'] = implode(' - ', $info);
+
+  // Provide alternate search result template.
+  $vars['template_files'][] = 'search-result-' . $vars['module'];
 }
