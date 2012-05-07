@@ -44,7 +44,8 @@ function brutus_preprocess_page(&$vars) {
   $body_classes[] = 'layout-'. (($vars['left']) ? 'first-main' : 'main') . (($vars['right']) ? '-last' : '');  // Sidebars active
   $body_classes = array_filter($body_classes);                                                       // Remove empty elements
   $vars['body_classes'] = implode(' ', $body_classes);                                               // Create class list separated by spaces
-  $vars['body_id'] = 'pid-' . strtolower(preg_replace('/[^a-zA-Z0-9-]+/', '-', drupal_get_path_alias($_GET['q'])));            // Add a unique page id
+  $vars['body_id'] = 'pid-' . strtolower(brutus_clean_css_identifier(drupal_get_path_alias($_GET['q'])));            // Add a unique page id
+
 
   // Generate links tree & add Superfish class if dropdown enabled, else make standard primary links
   $vars['primary_links_tree'] = '';
@@ -391,3 +392,21 @@ function brutus_breadcrumb($breadcrumb) {
   // Otherwise, return an empty string.
   return '';
 }
+function brutus_clean_css_identifier($identifier, $filter = array(' ' => '-', '_' => '-', '/' => '-', '[' => '-', ']' => '')) {
+ 
+   // By default, we filter using Drupal's coding standards.
+   $identifier = strtr($identifier, $filter);
+ 
+   // Valid characters in a CSS identifier are:
+   // - the hyphen (U+002D)
+   // - a-z (U+0030 - U+0039)
+   // - A-Z (U+0041 - U+005A)
+   // - the underscore (U+005F)
+   // - 0-9 (U+0061 - U+007A)
+   // - ISO 10646 characters U+00A1 and higher
+   // We strip out any character not in the above list.
+   $identifier = preg_replace('/[^\x{002D}\x{0030}-\x{0039}\x{0041}-\x{005A}\x{005F}\x{0061}-\x{007A}\x{00A1}-\x{FFFF}]/u', '', $identifier);
+ 
+   return $identifier;
+ 
+ }
