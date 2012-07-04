@@ -19,7 +19,7 @@ namespace :build do
   task :copy do
     puts "Copying files to #{theme_path}/#{theme_name}"
     system("rm -rf #{theme_path}/#{theme_name}")
-    system("cp -r brutus #{theme_path}/#{theme_name}")
+    system("cp -r brutus_core #{theme_path}/#{theme_name}")
   end
 
 end
