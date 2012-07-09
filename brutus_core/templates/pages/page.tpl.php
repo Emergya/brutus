@@ -1,19 +1,37 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
-<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print $language->language ?>" lang="<?php print $language->language ?>" dir="<?php print $language->dir ?>">
-  <head>
-    
-    <title><?php print $head_title; ?></title>
-    <?php print $head; ?>
-    <?php print $styles; ?>
-    <!--[if lte IE 6]><style type="text/css" media="all">@import "<?php print $base_path . path_to_theme() ?>/css/ie/ie6.css"</style><![endif]-->
-    <!--[if IE 7]><style type="text/css" media="all">@import "<?php print $base_path . path_to_theme() ?>/css/ie/ie7.css"</style><![endif]-->
-    <!--[if IE 8]><style type="text/css" media="all">@import "<?php print $base_path . path_to_theme() ?>/css/ie/ie8.css"</style><![endif]-->
-    <!--[if IE 9]><style type="text/css" media="all">@import "<?php print $base_path . path_to_theme() ?>/css/ie/ie9.css"</style><![endif]-->
-    <?php print $scripts; ?>
-  </head>
+<?php print $doctype; ?>
+<?php
+$html_attributes = "lang=\"{$language->language}\"";
+?>
+  <!--[if IE 7 ]><html <?php print $html_attributes; ?> class="no-js ie7"><![endif]-->
+  <!--[if IE 8 ]><html <?php print $html_attributes; ?> class="no-js ie8"><![endif]-->
+  <!--[if IE 9 ]><html <?php print $html_attributes; ?> class="no-js ie9"><![endif]-->
+  <!--[if (gt IE 9)|!(IE)]><!--><html <?php print $html_attributes; ?> class="no-js"><!--<![endif]-->
+<head>
+  <?php print $head; ?>
+  <!--[if IE ]>
+    <?php // Always force latest IE rendering engine (even in intranet) & Chrome Frame  ?>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <![endif]-->
+
+  <?php // Mobile viewport optimized: j.mp/bplateviewport  ?>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <?php // Prevent blocking  ?>
+  <!--[if IE 6]><![endif]-->
+
+  <title><?php print $head_title; ?></title>
+
+  <?php print $styles; ?>
+  <?php print $html5shim; ?>
+  <?php print $scripts; ?>
+    <!--[if lte IE 6]><style type="text/css" media="all">@import "<?php drupal_get_path('theme', 'brutus_core'); ?>/css/ie/ie6.css"</style><![endif]-->
+    <!--[if IE 7]><style type="text/css" media="all">@import "<?php print drupal_get_path('theme', 'brutus_core'); ?>/css/ie/ie7.css"</style><![endif]-->
+    <!--[if IE 8]><style type="text/css" media="all">@import "<?php drupal_get_path('theme', 'brutus_core'); ?>/css/ie/ie8.css"</style><![endif]-->
+    <!--[if IE 9]><style type="text/css" media="all">@import "<?php drupal_get_path('theme', 'brutus_core'); ?>/css/ie/ie9.css"</style><![endif]-->
+</head>
 
   <body id="<?php print $body_id; ?>" class="<?php print $body_classes; ?>">
-    <div id="skip"><a class="btn-pajama" href="#"><div id="pajama">GRID</div></a><a href="#content"><?php print t('Skip to Content'); ?></a> <a href="#navigation"><?php print t('Skip to Navigation'); ?></a></div>  
+    <div id="skip"><a href="#content"><?php print t('Skip to Content'); ?></a> <a href="#navigation"><?php print t('Skip to Navigation'); ?></a></div>  
     
     <!-- HEADER TOP -->
     <?php if ($header_top): ?>
@@ -69,7 +87,7 @@
         <?php if (!empty($secondary_links)){ print theme('links', $secondary_links, array('id' => 'secondary', 'class' => 'links sub-menu')); } ?>
       </div> <!-- /navigation -->
     <?php endif; ?>
-
+    <?php print $highlighted; ?>
     <?php print $breadcrumb; ?>
 
     <!-- MAIN -->
@@ -109,7 +127,9 @@
           <?php endif; ?>
 
           <div id="content-area">
+            <?php print $node_col_left; ?>
             <?php print $content; ?>
+            <?php print $node_col_right; ?>
           </div> <!-- /#content-area -->
 
           <?php print $feed_icons; ?>
@@ -123,18 +143,18 @@
           </div>
         </div> <!-- /content-inner /content -->
 
-        <?php if ($left): ?>
+        <?php if ($sidebar_first): ?>
           <div id="sidebar-first" class="column sidebar first">
             <div id="sidebar-first-inner" class="inner">
-              <?php print $left; ?>
+              <?php print $sidebar_first; ?>
             </div>
           </div>
-        <?php endif; ?> <!-- /sidebar-left -->
+        <?php endif; ?> <!-- /sidebar-first -->
 
-        <?php if ($right): ?>
+        <?php if ($sidebar_second): ?>
           <div id="sidebar-second" class="column sidebar second last">
             <div id="sidebar-second-inner" class="inner">
-              <?php print $right; ?>
+              <?php print $sidebar_second; ?>
             </div>
           </div>
         <?php endif; ?> <!-- /sidebar-second -->

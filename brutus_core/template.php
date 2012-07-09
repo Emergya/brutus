@@ -29,6 +29,9 @@ function brutus_core_theme(&$existing, $type, $theme, $path) {
 function brutus_core_preprocess_page(&$vars) {
   global $language, $theme_key, $theme_info, $user;
 
+   $vars['doctype'] = '<!DOCTYPE html>' . "\n";
+    $vars['html5shim'] = '<!--[if lt IE 9]><script src="'. base_path() . path_to_theme() .'/scripts/html5forIE.js"></script><![endif]-->';
+  
   // Add to array of helpful body classes
   $body_classes = explode(' ', $vars['body_classes']);                                               // Default classes
   if (isset($vars['node'])) {
@@ -41,7 +44,7 @@ function brutus_core_preprocess_page(&$vars) {
   if (module_exists('panels') && function_exists('panels_get_current_page_display')) {               // Panels page
     $body_classes[] = (panels_get_current_page_display()) ? 'panels' : '';
   }
-  $body_classes[] = 'layout-'. (($vars['left']) ? 'first-main' : 'main') . (($vars['right']) ? '-last' : '');  // Sidebars active
+  $body_classes[] = 'layout-'. (($vars['sidebar_first']) ? 'first-main' : 'main') . (($vars['sidebar_second']) ? '-last' : '');  // Sidebars active
   $body_classes = array_filter($body_classes);                                                       // Remove empty elements
   $vars['body_classes'] = implode(' ', $body_classes);                                               // Create class list separated by spaces
   $vars['body_id'] = 'pid-' . strtolower(brutus_core_clean_css_identifier(drupal_get_path_alias($_GET['q'])));            // Add a unique page id
@@ -57,7 +60,7 @@ function brutus_core_preprocess_page(&$vars) {
       else {
         $vars['primary_links_tree'] = menu_tree(variable_get('menu_primary_links_source', 'primary-links'));
       }
-      $vars['primary_links_tree'] = preg_replace('/<ul class="menu/i', '<ul class="menu sf-menu', $vars['primary_links_tree'], 1);
+      $vars['primary_links_tree'] = preg_replace('/<nav class="menu/i', '<nav class="menu sf-menu', $vars['primary_links_tree'], 1);
     }
     else {
       $vars['primary_links_tree'] = theme('links', $vars['primary_links'], array('class' => 'menu'));
@@ -83,6 +86,12 @@ function brutus_core_preprocess_node(&$vars) {
   // Add node_top and node_bottom region content
   $vars['node_top'] = theme('blocks', 'node_top');
   $vars['node_bottom'] = theme('blocks', 'node_bottom');
+  
+  // Add format date
+  $vars['submitted'] = t('Submitted by !username on', array('!username' => $vars['name']));
+  $vars['submitted_date'] = t('!datetime', array('!datetime' => $vars['date']));
+  $vars['submitted_pubdate'] = format_date($vars['created'], 'custom', 'Y-m-d');
+
 
 }
 
@@ -291,10 +300,10 @@ function brutus_core_menu_local_tasks() {
   $output = '';
   if ($primary = menu_primary_local_tasks()) {
     if(menu_secondary_local_tasks()) {
-      $output .= '<ul class="tabs primary with-secondary clearfix">' . $primary . '</ul>';
+      $output .= '<nav class="tabs primary with-secondary clearfix">' . $primary . '</nav>';
     }
     else {
-      $output .= '<ul class="tabs primary clearfix">' . $primary . '</ul>';
+      $output .= '<nav class="tabs primary clearfix">' . $primary . '</nav>';
     }
   }
   if ($secondary = menu_secondary_local_tasks()) {
@@ -307,7 +316,7 @@ function brutus_core_menu_local_tasks() {
  * 	Add custom classes to menu item "block"
  */	
 	
-function phptemplate_menu_item($link, $has_children, $menu = '', $in_active_trail = FALSE, $extra_class = NULL) {
+function brutus_core_menu_item($link, $has_children, $menu = '', $in_active_trail = FALSE, $extra_class = NULL) {
 $class = ($menu ? 'expanded' : ($has_children ? 'collapsed' : 'leaf'));
   if (!empty($extra_class)) {
     $class .= ' '. $extra_class;
@@ -475,5 +484,15 @@ function brutus_core_css_browser_selector($ua=null) {
     return join(' ', $b);
     
 }
+
+/**
+  *  * Generate doctype for templates
+  *   */
+function _brutus_doctype() {
+    return '<!DOCTYPE html>' . "\n";
+}
+
+
+
 
 ?>

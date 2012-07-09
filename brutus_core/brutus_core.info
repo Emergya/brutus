@@ -6,17 +6,20 @@ project = "brutus_core"
 engine = phptemplate
 version = "6.x"
 
-regions[header_top] = header top 
+regions[header_top] = Header top 
 regions[header] = Header
-regions[left] = First sidebar
-regions[right] = Second sidebar
+regions[highlighted] = Highlighted
+regions[sidebar_first] = Left sidebar
+regions[sidebar_second] = Right sidebar
 regions[content_top] = Content top
-regions[node_top] = node top 
-regions[content] = content
-regions[node_bottom] = node bottom
-regions[content_bottom] = content bottom
-regions[footer] = footer
-regions[footer_bottom] = footer bottom 
+regions[node_top] = Node top 
+regions[node_col_left] = Node column left 
+regions[content] = Content
+regions[node_col_right] = Node column left 
+regions[node_bottom] = Node bottom
+regions[content_bottom] = Content bottom
+regions[footer] = Footer
+regions[footer_bottom] = Footer bottom 
 
 features[] = logo
 features[] = name
@@ -30,6 +33,7 @@ features[] = primary_links
 features[] = secondary_links
 
 stylesheets[all][] = css/brutus_core.css
+stylesheets[all][] = css/boilerplate.css
 scripts[] = js/jquery.formalize.js
 scripts[] = js/selectivizr.js
 scripts[] = js/modernizr.js
